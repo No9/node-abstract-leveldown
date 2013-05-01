@@ -1,16 +1,35 @@
 /* Copyright (c) 2013 Rod Vagg, MIT License */
 
 function checkKeyValue (obj, type) {
+  
   if (obj === null || obj === undefined)
     return new Error(type + ' cannot be `null` or `undefined`')
   if (obj === null || obj === undefined)
     return new Error(type + ' cannot be `null` or `undefined`')
-  if (Buffer.isBuffer(obj)) {
-    if (obj.length === 0)
-      return new Error(type + ' cannot be an empty Buffer')
-  } else if (String(obj) === '')
+  if (isBuffer(obj) && obj.byteLength === 0)
+    return new Error(type + ' cannot be an empty ArrayBuffer')
+  if (String(obj) === '')
     return new Error(type + ' cannot be an empty String')
+  if (obj.length === 0)
+    return new Error(type + ' cannot be an empty Array')
 }
+function isBuffer(buf) {
+  return buf instanceof ArrayBuffer
+}
+
+function ArrayBufferToString(buf) {
+  return String.fromCharCode.apply(null, new Uint16Array(buf))
+}
+
+function StringToArrayBuffer(str) {
+  var buf = new ArrayBuffer(str.length * 2) // 2 bytes for each char
+  var bufView = new Uint16Array(buf)
+  for (var i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i)
+  }
+  return buf
+}
+
 
 function AbstractIterator (db) {
   this.db = db
@@ -55,13 +74,13 @@ AbstractIterator.prototype.end = function (callback) {
 
   process.nextTick(callback)
 }
-  
+
 function AbstractLevelDOWN (location) {
   if (!arguments.length || location === undefined)
-    throw new Error('leveldown() requires at least a location argument')
+    throw new Error('constructor requires at least a location argument')
 
   if (typeof location != 'string')
-    throw new Error('leveldown() requires a location string argument')
+    throw new Error('constructor requires a location string argument')
 
   this.location = location
 }
